@@ -106,10 +106,15 @@ router.get('/removeitem/:itemid', (req, res, next) => {
   Item.findById(req.params.itemid, (err, found) => {
     if (err) return next(err);
     // console.log(found);
-    fs.unlink(__dirname + '/../public/images/' + found.pictureUrl, (err) => {
-      if (err) return next(err);
-      console.log(found.pictureUrl + ' successfully deleted.');
-    });
+    if(found.pictureUrl){
+      fs.unlink(__dirname + '/../public/images/' + found.pictureUrl, (err) => {
+        if (err) return next(err);
+        console.log(found.pictureUrl + ' successfully deleted.');
+      });
+    } else {
+      console.log('No picture file to delete.');
+    }
+    
     Item.deleteOne({_id: found._id}, (err) => {
       if (err)
         return next(err);
