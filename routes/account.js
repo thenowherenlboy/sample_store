@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const Mailgun = require('mailgun-js-sdk');
+const nodemailer = require('nodemailer');
 const Item = require('../models/Item');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const authObject = require('./mailauth');
 
 const randomString = (length) => {
   let text = '';
@@ -14,6 +15,12 @@ const randomString = (length) => {
   return text;
 }
 
+var transporter = nodemailer.createTransport({
+  service: 'https://10minutemail.com/',
+  auth: {
+    user:'hxyhuefohlsgwergfr@bvhrs.com'
+  }
+});
 
 router.get('/', (req, res, next) => {
   const user = req.user;
@@ -90,10 +97,6 @@ router.post('/resetpassword', (req, res, next) => {
     user.nonce = randomString(8);
     user.passwordResetTime = new Date();
     user.save();
-    const mailgun = new Mailgun({
-      apiKey: '0e19e34d84893ef7d14a53860eb27fdc-c250c684-005b2fdd',
-      domain: 'sandboxb46e96a0affa47ada0c5221f4c5e0dd3.mailgun.org'
-    });
     const data = {
       to: req.body.email,
       from: 'YourSampleStore@localhost.com',
@@ -101,7 +104,12 @@ router.post('/resetpassword', (req, res, next) => {
       subject: 'Password Reset Request',
       html: 'Click <a href="http://localhost:5000/account/passwordreset?nonce=' + user.nonce + '&id=' + user._id + '">HERE</a> to reset your password. This link is valid for only 24 hours.'
     };
-    mailgun.sendMessage('sandboxb46e96a0affa47ada0c5221f4c5e0dd3.mailgun.org', data);
+    transporter.sendMail(data, (err, info) =>{
+      if(err){
+        return next(err);
+      }
+      console.log('Email sent: ' + info.response);
+    });
     res.json({
       confirmation: 'success',
       data: 'reset password endpoint',
